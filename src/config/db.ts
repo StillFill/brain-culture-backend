@@ -6,6 +6,7 @@ const sequelize = new Sequelize(
   "braincultureadmin",
   {
     dialect: "postgres",
+    // logging: false,
   }
 );
 

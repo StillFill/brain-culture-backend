@@ -1,7 +1,7 @@
 import express, { Request, Response, Application } from "express";
 import ProdutorRouter from "./src/routes/produtor";
 import bodyParser from "body-parser";
-import { cpf, cnpj } from "cpf-cnpj-validator";
+import cors from "cors";
 
 const app: Application = express();
 const port = process.env.PORT || 8000;
@@ -12,6 +12,7 @@ app.use(
     extended: true,
   })
 );
+app.use(cors());
 
 app.get("/", (_: Request, res: Response) => {
   res.send("Welcome to Express & TypeScript Server");

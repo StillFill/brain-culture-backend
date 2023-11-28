@@ -1,41 +1,22 @@
 import sq from "../config/db";
 
 import { DataTypes } from "sequelize";
+import FazendaModel from "./fazenda";
 
-const ProdutorModel = sq.define("produtor", {
+const ProdutorModel = sq.define("produtores", {
   documento: {
     type: DataTypes.STRING,
     allowNull: false,
     primaryKey: true,
   },
 
-  nome_produtor: {
+  nome: {
     type: DataTypes.STRING,
   },
+});
 
-  cidade: {
-    type: DataTypes.STRING,
-  },
-
-  estado: {
-    type: DataTypes.STRING,
-  },
-
-  nome_fazenda: {
-    type: DataTypes.STRING,
-  },
-
-  area_total_fazenda: {
-    type: DataTypes.INTEGER,
-  },
-
-  area_agricultavel_fazenda: {
-    type: DataTypes.INTEGER,
-  },
-
-  area_vegetacao_fazenda: {
-    type: DataTypes.INTEGER,
-  },
+ProdutorModel.hasMany(FazendaModel, {
+  foreignKey: "documento_produtor",
 });
 
 ProdutorModel.sync({ alter: true })
