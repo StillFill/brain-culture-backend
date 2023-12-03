@@ -6,10 +6,10 @@ import { IProdutor } from "../interfaces/produtor";
 import { ProdutorSchema } from "../middlewares/validateProdutorSchema";
 import CulturaFazendaModel from "../models/cultura-fazenda";
 import FazendaModel from "../models/fazenda";
-// import { ProdutorSchema } from "../middlewares/validateProdutorSchema";
 import ProdutorModel from "../models/produtor";
 import { Model, ModelCtor } from "sequelize";
 import CulturaModel from "../models/cultura";
+import { getAllCulturas } from "./cultura";
 
 const deParaFazenda: any = [
   ["area_agricultavel", "area_agricultavel_fazenda"],
@@ -27,16 +27,44 @@ export const getAllProdutores = async () => {
         model: FazendaModel,
         required: true,
         attributes: [...deParaFazenda],
+        include: [
+          {
+            model: CulturaFazendaModel,
+            required: false,
+          },
+        ],
       },
     ],
   });
 
+  const culturas = await getAllCulturas();
+  console.log(culturas[0].toJSON());
+  console.log(culturas[1].toJSON());
+  console.log(culturas[2].toJSON());
+  console.log(culturas[3].toJSON());
+  console.log(culturas[4].toJSON());
   return res.map((r) => {
     const { fazendas, ..._r } = r.toJSON();
+    const [{ culturafazendas, ...fazenda }] = fazendas;
+
+    console.log(_r);
+    console.log(fazenda);
+
     return {
-      ...fazendas[0],
+      ...fazenda,
       ..._r,
       nome_fazenda: fazendas[0].nome,
+      culturas: culturafazendas.map((f: any) => {
+        console.log(f.id);
+        const cultura = culturas
+          .find((a) => a.toJSON().id === f.id_cultura)
+          ?.toJSON();
+
+        return {
+          id: f.id,
+          nome: cultura ? cultura.nome : "",
+        };
+      }),
     };
   });
 };
@@ -63,10 +91,6 @@ export const getProdutorbyDocumento = async (documento: string) => {
     ..._r,
     nome_fazenda: fazendas[0].nome_fazenda,
   };
-};
-
-export const getAllCulturas = async () => {
-  return await CulturaModel.findAll();
 };
 
 export const addProdutor = async (produtorReq: IProdutorFazendaRequest) => {

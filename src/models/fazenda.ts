@@ -2,6 +2,7 @@ import sq from "../config/db";
 
 import { DataTypes } from "sequelize";
 import ProdutorModel from "./produtor";
+import CulturaFazendaModel from "./cultura-fazenda";
 
 const FazendaModel = sq.define("fazendas", {
   id: {
@@ -42,6 +43,10 @@ const FazendaModel = sq.define("fazendas", {
   area_vegetacao: {
     type: DataTypes.INTEGER,
   },
+});
+
+FazendaModel.hasMany(CulturaFazendaModel, {
+  foreignKey: "id_fazenda",
 });
 
 FazendaModel.sync({ alter: true })

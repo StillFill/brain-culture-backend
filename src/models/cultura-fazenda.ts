@@ -1,6 +1,7 @@
 import sq from "../config/db";
 
 import { DataTypes } from "sequelize";
+import CulturaModel from "./cultura";
 
 const CulturaFazendaModel = sq.define("culturafazendas", {
   id: {

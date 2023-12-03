@@ -14,5 +14,5 @@ export const ProdutorSchema = Joi.object({
   area_total_fazenda: Joi.number(),
   area_agricultavel_fazenda: Joi.number(),
   area_vegetacao_fazenda: Joi.number(),
-  culturas: Joi.array().items(Joi.string()),
+  culturas: Joi.array().items(Joi.number()),
 });
