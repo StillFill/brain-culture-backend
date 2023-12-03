@@ -7,7 +7,7 @@ export interface IProdutorFazendaRequest {
   area_total_fazenda: number;
   area_agricultavel_fazenda: number;
   area_vegetacao_fazenda: number;
-  culturas: string[];
+  culturas: number[];
 }
 
 export interface ICultura {

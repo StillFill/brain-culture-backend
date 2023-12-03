@@ -7,8 +7,6 @@ import { ProdutorSchema } from "../middlewares/validateProdutorSchema";
 import CulturaFazendaModel from "../models/cultura-fazenda";
 import FazendaModel from "../models/fazenda";
 import ProdutorModel from "../models/produtor";
-import { Model, ModelCtor } from "sequelize";
-import CulturaModel from "../models/cultura";
 import { getAllCulturas } from "./cultura";
 
 const deParaFazenda: any = [
@@ -38,30 +36,22 @@ export const getAllProdutores = async () => {
   });
 
   const culturas = await getAllCulturas();
-  console.log(culturas[0].toJSON());
-  console.log(culturas[1].toJSON());
-  console.log(culturas[2].toJSON());
-  console.log(culturas[3].toJSON());
-  console.log(culturas[4].toJSON());
+
   return res.map((r) => {
     const { fazendas, ..._r } = r.toJSON();
     const [{ culturafazendas, ...fazenda }] = fazendas;
-
-    console.log(_r);
-    console.log(fazenda);
 
     return {
       ...fazenda,
       ..._r,
       nome_fazenda: fazendas[0].nome,
       culturas: culturafazendas.map((f: any) => {
-        console.log(f.id);
         const cultura = culturas
           .find((a) => a.toJSON().id === f.id_cultura)
           ?.toJSON();
 
         return {
-          id: f.id,
+          id: f.id_cultura,
           nome: cultura ? cultura.nome : "",
         };
       }),
@@ -127,7 +117,6 @@ export const addProdutor = async (produtorReq: IProdutorFazendaRequest) => {
     console.error("ERRO CADASTRAR PRODUTOR: ", err.message);
     await transaction.rollback();
     throw new Error(err.message);
-    // adicionar transaction abort (se der tempo)
   }
 };
 
@@ -158,12 +147,37 @@ export const updateProdutor = async (produtorReq: IProdutorFazendaRequest) => {
       { where: { documento_produtor: produtor.documento }, transaction }
     );
 
-    // TODO: adicionar regra de adicionar ou remover cultura
-    // const culturasToInsert: any = produtorReq.culturas?.map((id_cultura) =>
-    //   buildCulturasFazendaToInsertOrUpdate(idFazenda, id_cultura)
-    // );
+    const fzd = (
+      await FazendaModel.findOne({
+        where: { documento_produtor: produtor.documento },
+        transaction,
+      })
+    )?.toJSON();
 
-    // await CulturaFazendaModel.bulkCreate(culturasToInsert, { transaction });
+    const culturasFromFazenda = await CulturaFazendaModel.findAll({
+      where: { id_fazenda: fzd.id },
+    });
+
+    const culturasToAdd = produtorReq.culturas
+      .filter(
+        (a) => !culturasFromFazenda.find((b) => b.toJSON().id_cultura === a)
+      )
+      .map((a) => ({
+        id_fazenda: fzd.id,
+        id_cultura: a,
+      }));
+
+    const culturasToRemove = culturasFromFazenda
+      .filter(
+        (a) => !produtorReq.culturas.find((b) => a.toJSON().id_cultura === b)
+      )
+      .map((a) => a.toJSON().id_cultura);
+
+    await CulturaFazendaModel.bulkCreate(culturasToAdd, { transaction });
+    await CulturaFazendaModel.destroy({
+      where: { id_cultura: culturasToRemove },
+      transaction,
+    });
 
     await transaction.commit();
   } catch (err: any) {
@@ -180,76 +194,6 @@ export const removeProdutor = async (documento: string) => {
       documento,
     },
   });
-};
-
-export const getAllFazendasQuantity = async () => {
-  return await FazendaModel.count();
-};
-
-export const getAllProdutorsTotalArea = async () => {
-  return await FazendaModel.sum("area_total");
-};
-
-export const getAllProdutorsGraphByField = async (
-  model: ModelCtor<Model<any, any>>,
-  field: string,
-  id_field: string
-) => {
-  const estadoGroup = (await model.findAll({
-    attributes: [field, [sequelize.fn("COUNT", id_field), "quantity"]],
-    group: [field],
-    raw: true,
-  })) as any;
-
-  const totalCount = estadoGroup.reduce(
-    (a: number, b: { quantity: number }) => a + Number(b.quantity),
-    0
-  );
-
-  const groupWithPercentage = estadoGroup.map((a: any) => {
-    return {
-      ...a,
-      quantity: Number(a.quantity),
-      percentage: Math.round(((a.quantity * 100) / totalCount) * 100) / 100,
-    };
-  });
-
-  return groupWithPercentage;
-};
-
-export const getAllProdutorsGraphByArea = async () => {
-  const areas = (
-    await FazendaModel.findOne({
-      attributes: [
-        [
-          sequelize.fn("sum", sequelize.col("area_agricultavel")),
-          "area_agricultavel_qtd",
-        ],
-        [
-          sequelize.fn("sum", sequelize.col("area_vegetacao")),
-          "area_vegetacao_qtd",
-        ],
-      ],
-    })
-  )?.toJSON();
-
-  const areaAgricultavel = Number(areas.area_agricultavel_qtd);
-  const areaVegetacao = Number(areas.area_vegetacao_qtd);
-
-  const totalCount = areaAgricultavel + areaVegetacao;
-  return [
-    {
-      area: "Agricultável",
-      quantity: areaAgricultavel,
-      percentage:
-        Math.round(((areaAgricultavel * 100) / totalCount) * 100) / 100,
-    },
-    {
-      area: "Vegatação",
-      quantity: areaVegetacao,
-      percentage: Math.round(((areaVegetacao * 100) / totalCount) * 100) / 100,
-    },
-  ];
 };
 
 const validateAreaTotal = (produtor: IProdutorFazendaRequest) => {
@@ -285,8 +229,8 @@ const buildFazendaToInsertOrUpdate = (
 };
 
 const buildCulturasFazendaToInsertOrUpdate = (
-  idFazenda: string,
-  idCultura: string
+  idFazenda: number,
+  idCultura: number
 ): ICulturaFazenda => {
   return {
     id_cultura: idCultura,

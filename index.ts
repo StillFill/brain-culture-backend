@@ -4,6 +4,7 @@ import bodyParser from "body-parser";
 import cors from "cors";
 import DashboardRouter from "./src/routes/dashboard";
 import CulturaRouter from "./src/routes/culturas";
+import { createInitialCulturas } from "./src/services/cultura";
 
 const app: Application = express();
 const port = process.env.PORT || 8000;

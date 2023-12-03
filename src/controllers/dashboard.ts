@@ -4,7 +4,7 @@ import {
   getAllProdutorsGraphByField,
   getAllFazendasQuantity,
   getAllProdutorsTotalArea,
-} from "../services/produtor";
+} from "../services/fazenda";
 import FazendaModel from "../models/fazenda";
 import CulturaFazendaModel from "../models/cultura-fazenda";
 import { getAllCulturas } from "../services/cultura";
